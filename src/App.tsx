@@ -124,10 +124,6 @@ export default function App() {
             </h1>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-xs font-mono uppercase tracking-widest text-gray-500">
-            <a href="#" className="hover:text-hardware-accent transition-colors">Documentation</a>
-            <a href="#" className="hover:text-hardware-accent transition-colors">Components</a>
-            <a href="#" className="hover:text-hardware-accent transition-colors">Simulation</a>
-            <div className="h-4 w-px bg-hardware-border" />
             <div className="flex items-center gap-2 text-hardware-accent">
               <div className="w-2 h-2 rounded-full bg-hardware-accent animate-pulse" />
               SYSTEM READY
@@ -441,28 +437,23 @@ export default function App() {
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-hardware-border py-12 bg-black/50">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-6 h-6 bg-hardware-accent rounded flex items-center justify-center">
                 <Cpu className="w-4 h-4 text-black" />
               </div>
-              <h1 className="font-mono text-lg font-bold tracking-tighter text-white">
-                ROBO<span className="text-hardware-accent">FORGE</span>.AI
-              </h1>
+              <div className="flex flex-col">
+                <h1 className="font-mono text-lg font-bold tracking-tighter text-white">
+                  ROBO<span className="text-hardware-accent">FORGE</span>.AI
+                </h1>
+                <span className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">by Alphons Jaison</span>
+              </div>
             </div>
             <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
               The world's first AI-native robotics design platform. 
               Bridging the gap between conceptual engineering and physical reality.
             </p>
-          </div>
-          <div>
-            <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-6">Resources</h4>
-            <ul className="space-y-4 text-sm text-gray-500">
-              <li><a href="#" className="hover:text-hardware-accent transition-colors">API Documentation</a></li>
-              <li><a href="#" className="hover:text-hardware-accent transition-colors">Component Library</a></li>
-              <li><a href="#" className="hover:text-hardware-accent transition-colors">Safety Protocols</a></li>
-            </ul>
           </div>
           <div>
             <h4 className="text-xs font-mono uppercase tracking-widest text-white mb-6">System Status</h4>
@@ -483,7 +474,12 @@ export default function App() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 mt-12 pt-8 border-t border-hardware-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[10px] font-mono text-gray-600">© 2026 ROBOFORGE AI. ALL RIGHTS RESERVED. [SECURE_CONNECTION_ESTABLISHED]</p>
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] font-mono text-gray-600">© 2026 ROBOFORGE AI. ALL RIGHTS RESERVED. [SECURE_CONNECTION_ESTABLISHED]</p>
+            <p className="text-[9px] font-mono text-amber-500/40 uppercase tracking-wider max-w-md">
+              System Notice: This application is under active development. Experimental features may result in unexpected behavior or errors.
+            </p>
+          </div>
           <div className="flex gap-6">
             <Eye className="w-4 h-4 text-gray-700" />
             <Zap className="w-4 h-4 text-gray-700" />
