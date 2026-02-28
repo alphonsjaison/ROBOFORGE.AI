@@ -1,20 +1,15 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# RoboForge AI 🤖
+> **A Generative Robotics Engineering Platform**
 
-# Run and deploy your AI Studio app
+## 🚀 Overview
+RoboForge AI is a specialized engineering assistant that bridges the gap between conceptual design and technical specification. It utilizes **Google Gemini 3 Flash** to synthesize mechanical constraints, component lists, and functional control logic from natural language prompts.
 
-This contains everything you need to run your app locally.
+## 🛠️ Tech Stack
+* **Frontend:** React 19, Tailwind CSS 4, Framer Motion
+* **AI Inference:** Google Gemini API (Multimodal)
+* **Visualization:** Recharts (Telemetry), Lucide React (UI)
 
-View your app in AI Studio: https://ai.studio/apps/bcbcce29-63a6-4bbe-bcef-991e2306435e
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## ✨ Key Features
+* **Generative CAD Logic:** Converts text prompts (e.g., "Mars Rover") into structured JSON specifications.
+* **Real-time Telemetry:** Simulates hardware sensor data (Torque, Battery, Thermal) for UI prototyping.
+* **Component Estimator:** Automatically generates a bill of materials (BOM) for the synthesized robot.
