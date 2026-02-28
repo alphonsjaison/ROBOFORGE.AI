@@ -42,13 +42,6 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const mockSensorData = Array.from({ length: 20 }, (_, i) => ({
-  time: i,
-  torque: Math.random() * 100,
-  temp: 35 + Math.random() * 15,
-  battery: 100 - i * 2
-}));
-
 export default function App() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,6 +49,33 @@ export default function App() {
   const [design, setDesign] = useState<RobotDesign | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'specs' | 'code' | 'sim'>('specs');
+  const [telemetry, setTelemetry] = useState(() => Array.from({ length: 20 }, (_, i) => ({
+    time: i,
+    torque: 40 + Math.random() * 20,
+    temp: 38 + Math.random() * 5,
+    battery: 100 - i * 0.5
+  })));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTelemetry(prev => {
+        const last = prev[prev.length - 1];
+        const nextTime = last.time + 1;
+        const nextTorque = Math.max(20, Math.min(90, last.torque + (Math.random() - 0.5) * 15));
+        const nextTemp = Math.max(30, Math.min(60, last.temp + (Math.random() - 0.5) * 2));
+        const nextBattery = Math.max(0, last.battery - 0.05);
+        
+        const newData = [...prev.slice(1), { 
+          time: nextTime, 
+          torque: nextTorque, 
+          temp: nextTemp, 
+          battery: nextBattery 
+        }];
+        return newData;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,7 +249,7 @@ export default function App() {
                   </div>
                   <div className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={mockSensorData}>
+                      <AreaChart data={telemetry}>
                         <defs>
                           <linearGradient id="colorTorque" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#00ff41" stopOpacity={0.3}/>
@@ -243,18 +263,29 @@ export default function App() {
                           contentStyle={{ backgroundColor: '#151619', border: '1px solid #2a2b2f', borderRadius: '8px' }}
                           itemStyle={{ color: '#00ff41', fontSize: '12px', fontFamily: 'monospace' }}
                         />
-                        <Area type="monotone" dataKey="torque" stroke="#00ff41" fillOpacity={1} fill="url(#colorTorque)" />
+                        <Area 
+                          type="monotone" 
+                          dataKey="torque" 
+                          stroke="#00ff41" 
+                          fillOpacity={1} 
+                          fill="url(#colorTorque)" 
+                          isAnimationActive={false}
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="grid grid-cols-3 gap-4 mt-6">
                     <div className="p-3 bg-black/40 rounded-lg border border-hardware-border">
                       <div className="text-[10px] text-gray-500 font-mono mb-1">TEMP</div>
-                      <div className="text-lg font-mono text-white">42.4°C</div>
+                      <div className="text-lg font-mono text-white">
+                        {telemetry[telemetry.length - 1].temp.toFixed(1)}°C
+                      </div>
                     </div>
                     <div className="p-3 bg-black/40 rounded-lg border border-hardware-border">
                       <div className="text-[10px] text-gray-500 font-mono mb-1">BATT</div>
-                      <div className="text-lg font-mono text-white">88%</div>
+                      <div className="text-lg font-mono text-white">
+                        {Math.floor(telemetry[telemetry.length - 1].battery)}%
+                      </div>
                     </div>
                     <div className="p-3 bg-black/40 rounded-lg border border-hardware-border">
                       <div className="text-[10px] text-gray-500 font-mono mb-1">LOAD</div>
