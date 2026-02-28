@@ -16,7 +16,7 @@ async function startServer() {
   app.use(express.json());
 
   // Initialize Gemini on the server
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.API_KEY;
   const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
   // API Routes
@@ -25,8 +25,8 @@ async function startServer() {
     console.log(`[Server] Generating design for: "${prompt}"`);
     
     if (!apiKey) {
-      console.error("[Server] GEMINI_API_KEY is missing!");
-      return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
+      console.error("[Server] API_KEY is missing!");
+      return res.status(500).json({ error: "API_KEY not configured on server" });
     }
 
     try {
@@ -86,8 +86,8 @@ async function startServer() {
     console.log(`[Server] Generating image for: "${description}"`);
 
     if (!apiKey) {
-      console.error("[Server] GEMINI_API_KEY is missing!");
-      return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
+      console.error("[Server] API_KEY is missing!");
+      return res.status(500).json({ error: "API_KEY not configured on server" });
     }
 
     try {
