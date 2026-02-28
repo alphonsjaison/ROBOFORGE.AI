@@ -14,9 +14,22 @@ export async function generateRobotDesign(prompt: string): Promise<RobotDesign> 
       body: JSON.stringify({ prompt }),
     });
 
+    const contentType = response.headers.get("content-type");
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to generate design");
+      let errorMessage = "Failed to generate design";
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } else {
+        const text = await response.text();
+        errorMessage = `Server Error (${response.status}): ${text.slice(0, 100)}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      throw new Error(`Expected JSON response but received: ${text.slice(0, 100)}`);
     }
 
     const data = await response.json();
@@ -29,7 +42,7 @@ export async function generateRobotDesign(prompt: string): Promise<RobotDesign> 
       components: Array.isArray(data.components) ? data.components : [],
       controlLogic: data.controlLogic || "# No control logic generated."
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Design generation failed:", error);
     throw error;
   }
@@ -43,9 +56,15 @@ export async function generateRobotImage(description: string): Promise<string | 
       body: JSON.stringify({ description }),
     });
 
+    const contentType = response.headers.get("content-type");
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to generate image");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate image");
+      } else {
+        const text = await response.text();
+        throw new Error(`Server Error (${response.status}): ${text.slice(0, 100)}`);
+      }
     }
 
     const data = await response.json();

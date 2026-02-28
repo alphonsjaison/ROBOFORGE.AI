@@ -22,7 +22,10 @@ async function startServer() {
   // API Routes
   app.post("/api/generate-design", async (req, res) => {
     const { prompt } = req.body;
+    console.log(`[Server] Generating design for: "${prompt}"`);
+    
     if (!apiKey) {
+      console.error("[Server] GEMINI_API_KEY is missing!");
       return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
     }
 
@@ -58,16 +61,32 @@ async function startServer() {
         }
       });
 
-      res.json(JSON.parse(response.text || "{}"));
+      const text = response.text;
+      console.log("[Server] Received response from Gemini");
+      
+      if (!text) {
+        throw new Error("Gemini returned an empty response.");
+      }
+
+      try {
+        const parsed = JSON.parse(text);
+        res.json(parsed);
+      } catch (parseError) {
+        console.error("[Server] JSON Parse Error. Raw text:", text);
+        throw new Error("Failed to parse AI response as JSON.");
+      }
     } catch (error: any) {
-      console.error("Design generation failed:", error);
+      console.error("[Server] Design generation failed:", error);
       res.status(500).json({ error: error.message || "Failed to generate design" });
     }
   });
 
   app.post("/api/generate-image", async (req, res) => {
     const { description } = req.body;
+    console.log(`[Server] Generating image for: "${description}"`);
+
     if (!apiKey) {
+      console.error("[Server] GEMINI_API_KEY is missing!");
       return res.status(500).json({ error: "GEMINI_API_KEY not configured on server" });
     }
 
@@ -79,6 +98,7 @@ async function startServer() {
         }
       });
 
+      console.log("[Server] Received image response from Gemini");
       let imageUrl = null;
       for (const part of response.candidates?.[0]?.content?.parts || []) {
         if (part.inlineData) {
@@ -86,9 +106,14 @@ async function startServer() {
           break;
         }
       }
+
+      if (!imageUrl) {
+        console.warn("[Server] No image data found in Gemini response");
+      }
+      
       res.json({ imageUrl });
     } catch (error: any) {
-      console.error("Image generation failed:", error);
+      console.error("[Server] Image generation failed:", error);
       res.status(500).json({ error: error.message || "Failed to generate image" });
     }
   });
