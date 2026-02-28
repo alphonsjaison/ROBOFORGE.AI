@@ -1,0 +1,5 @@
+{
+  "name": "RoboForge AI",
+  "description": "An AI-powered design and simulation assistant for robotics engineering. Generate robot specifications, visual concepts, and control code using Gemini.",
+  "requestFramePermissions": []
+}
