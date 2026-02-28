@@ -57,7 +57,7 @@ function RobotBase() {
 export default function RobotScene() {
   return (
     <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
-      <Canvas shadows dpr={[1, 2]}>
+      <Canvas shadows={{ type: THREE.PCFShadowMap }} dpr={[1, 2]}>
         <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={50} />
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={1} color="#00ff41" />
