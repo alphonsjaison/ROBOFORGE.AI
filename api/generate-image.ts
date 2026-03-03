@@ -31,12 +31,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
+
+    // Retry helper for 503 errors
+    const withRetry = async (fn: () => Promise<any>, maxRetries = 3) => {
+      let lastError;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          return await fn();
+        } catch (error: any) {
+          lastError = error;
+          const is503 = error.message?.includes("503") || error.status === 503;
+          if (is503 && i < maxRetries - 1) {
+            const delay = Math.pow(2, i) * 1000;
+            console.warn(`[API] Gemini 503 error. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw lastError;
+    };
+
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-2.5-flash-image",
       contents: {
         parts: [{ text: `A highly detailed, professional engineering concept render of a robot: ${description}. Cinematic lighting, technical blueprint style background, 4k, photorealistic.` }]
       }
-    });
+    }));
 
     let imageUrl = null;
     for (const part of response.candidates?.[0]?.content?.parts || []) {

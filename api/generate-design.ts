@@ -35,8 +35,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
+
+    // Retry helper for 503 errors
+    const withRetry = async (fn: () => Promise<any>, maxRetries = 3) => {
+      let lastError;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          return await fn();
+        } catch (error: any) {
+          lastError = error;
+          const is503 = error.message?.includes("503") || error.status === 503;
+          if (is503 && i < maxRetries - 1) {
+            const delay = Math.pow(2, i) * 1000;
+            console.warn(`[API] Gemini 503 error. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw lastError;
+    };
+
     // Using gemini-2.5-flash for better speed/reliability in serverless environments
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Design a robot based on this description: ${prompt}. 
       Provide technical details, components, and basic control code.`,
@@ -65,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           required: ["name", "purpose", "specifications", "components", "controlLogic"]
         }
       }
-    });
+    }));
 
     const text = response.text;
     if (!text) {

@@ -19,6 +19,27 @@ async function startServer() {
   const apiKey = process.env.API_KEY;
   const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
+  // Retry helper for 503 errors
+  const withRetry = async (fn: () => Promise<any>, maxRetries = 3) => {
+    let lastError;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        lastError = error;
+        const is503 = error.message?.includes("503") || error.status === 503;
+        if (is503 && i < maxRetries - 1) {
+          const delay = Math.pow(2, i) * 1000;
+          console.warn(`[Server] Gemini 503 error. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw lastError;
+  };
+
   // API Routes
   app.post("/api/generate-design", async (req, res) => {
     const { prompt } = req.body;
@@ -30,8 +51,8 @@ async function startServer() {
     }
 
     try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+      const response = await withRetry(() => ai.models.generateContent({
+        model: "gemini-2.5-flash", // Switched to 2.5-flash for better stability
         contents: `Design a robot based on this description: ${prompt}. 
         Provide technical details, components, and basic control code.`,
         config: {
@@ -59,7 +80,7 @@ async function startServer() {
             required: ["name", "purpose", "specifications", "components", "controlLogic"]
           }
         }
-      });
+      }));
 
       const text = response.text;
       console.log("[Server] Received response from Gemini");
@@ -91,12 +112,12 @@ async function startServer() {
     }
 
     try {
-      const response = await ai.models.generateContent({
+      const response = await withRetry(() => ai.models.generateContent({
         model: "gemini-2.5-flash-image",
         contents: {
           parts: [{ text: `A highly detailed, professional engineering concept render of a robot: ${description}. Cinematic lighting, technical blueprint style background, 4k, photorealistic.` }]
         }
-      });
+      }));
 
       console.log("[Server] Received image response from Gemini");
       let imageUrl = null;
