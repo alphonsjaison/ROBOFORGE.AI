@@ -23,10 +23,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { description } = req.body;
   console.log(`[API] Image Request: "${description}"`);
 
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error("[API] CRITICAL: API_KEY is missing!");
-    return res.status(500).json({ error: "API_KEY not configured on Vercel." });
+    console.error("[API] CRITICAL: API key is missing!");
+    return res.status(500).json({ error: "API Key not found on Vercel." });
   }
 
   try {

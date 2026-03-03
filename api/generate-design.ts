@@ -23,10 +23,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { prompt } = req.body;
   console.log(`[API] Design Request: "${prompt}"`);
 
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error("[API] CRITICAL: API_KEY is missing from environment variables!");
-    return res.status(500).json({ error: "API_KEY not configured on Vercel. Please add it to Environment Variables." });
+    console.error("[API] CRITICAL: API key is missing from environment variables!");
+    const availableKeys = Object.keys(process.env).filter(k => k.includes('KEY')).join(', ');
+    return res.status(500).json({ 
+      error: "API Key not found on Vercel.",
+      details: `Please ensure you have an environment variable named 'API_KEY'. (Found keys: ${availableKeys || 'none'})`
+    });
   }
 
   try {
