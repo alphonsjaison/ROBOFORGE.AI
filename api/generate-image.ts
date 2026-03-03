@@ -1,23 +1,36 @@
 import { GoogleGenAI } from "@google/genai";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const apiKey = process.env.API_KEY;
-const ai = new GoogleGenAI({ apiKey: apiKey || "" });
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   const { description } = req.body;
-  console.log(`[API] Generating image for: "${description}"`);
+  console.log(`[API] Image Request: "${description}"`);
 
+  const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    console.error("[API] API_KEY is missing!");
-    return res.status(500).json({ error: "API_KEY not configured on server" });
+    console.error("[API] CRITICAL: API_KEY is missing!");
+    return res.status(500).json({ error: "API_KEY not configured on Vercel." });
   }
 
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-image",
       contents: {
@@ -34,12 +47,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!imageUrl) {
-      console.warn("[API] No image data found in Gemini response");
+      throw new Error("No image data found in Gemini response");
     }
     
     res.status(200).json({ imageUrl });
   } catch (error: any) {
-    console.error("[API] Image generation failed:", error);
+    console.error("[API] Image Error:", error);
     res.status(500).json({ error: error.message || "Failed to generate image" });
   }
 }

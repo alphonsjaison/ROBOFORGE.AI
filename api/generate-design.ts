@@ -1,25 +1,39 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-const apiKey = process.env.API_KEY;
-const ai = new GoogleGenAI({ apiKey: apiKey || "" });
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   const { prompt } = req.body;
-  console.log(`[API] Generating design for: "${prompt}"`);
+  console.log(`[API] Design Request: "${prompt}"`);
 
+  const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    console.error("[API] API_KEY is missing!");
-    return res.status(500).json({ error: "API_KEY not configured on server" });
+    console.error("[API] CRITICAL: API_KEY is missing from environment variables!");
+    return res.status(500).json({ error: "API_KEY not configured on Vercel. Please add it to Environment Variables." });
   }
 
   try {
+    const ai = new GoogleGenAI({ apiKey });
+    // Using gemini-2.5-flash for better speed/reliability in serverless environments
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: `Design a robot based on this description: ${prompt}. 
       Provide technical details, components, and basic control code.`,
       config: {
@@ -54,15 +68,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error("Gemini returned an empty response.");
     }
 
-    try {
-      const parsed = JSON.parse(text);
-      res.status(200).json(parsed);
-    } catch (parseError) {
-      console.error("[API] JSON Parse Error. Raw text:", text);
-      throw new Error("Failed to parse AI response as JSON.");
-    }
+    const parsed = JSON.parse(text);
+    res.status(200).json(parsed);
   } catch (error: any) {
-    console.error("[API] Design generation failed:", error);
-    res.status(500).json({ error: error.message || "Failed to generate design" });
+    console.error("[API] Design Error:", error);
+    res.status(500).json({ 
+      error: error.message || "Failed to generate design",
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }
