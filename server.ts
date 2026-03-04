@@ -19,7 +19,7 @@ async function startServer() {
   const apiKey = process.env.API_KEY;
   const ai = new GoogleGenAI({ apiKey: apiKey || "" });
 
-  // Retry helper for 503 errors
+  // Retry helper for 503 and 429 errors
   const withRetry = async (fn: () => Promise<any>, maxRetries = 3) => {
     let lastError;
     for (let i = 0; i < maxRetries; i++) {
@@ -28,9 +28,17 @@ async function startServer() {
       } catch (error: any) {
         lastError = error;
         const is503 = error.message?.includes("503") || error.status === 503;
-        if (is503 && i < maxRetries - 1) {
-          const delay = Math.pow(2, i) * 1000;
-          console.warn(`[Server] Gemini 503 error. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+        const is429 = error.message?.includes("429") || error.status === 429 || error.message?.includes("quota");
+        
+        if ((is503 || is429) && i < maxRetries - 1) {
+          // Try to extract retry delay from error message or use exponential backoff
+          let delay = Math.pow(2, i) * 2000;
+          const match = error.message?.match(/retry in ([\d.]+)s/i);
+          if (match) {
+            delay = (parseFloat(match[1]) + 1) * 1000;
+          }
+          
+          console.warn(`[Server] Gemini ${is429 ? '429' : '503'} error. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }

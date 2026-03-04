@@ -26,17 +26,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error("[API] CRITICAL: API key is missing from environment variables!");
-    const availableKeys = Object.keys(process.env).filter(k => k.includes('KEY')).join(', ');
+    const allKeys = Object.keys(process.env);
+    const keyLikeNames = allKeys.filter(k => k.toUpperCase().includes('KEY') || k.toUpperCase().includes('GEMINI'));
+    
     return res.status(500).json({ 
       error: "API Key not found on Vercel.",
-      details: `Please ensure you have an environment variable named 'API_KEY'. (Found keys: ${availableKeys || 'none'})`
+      details: "Environment variable 'API_KEY' is missing.",
+      troubleshooting: [
+        "1. Go to Vercel Project Settings > Environment Variables",
+        "2. Ensure a variable named 'API_KEY' exists with your Gemini key",
+        "3. IMPORTANT: You MUST trigger a new Deployment (Redeploy) after adding variables",
+        `4. Found similar variables: ${keyLikeNames.join(', ') || 'none'}`
+      ]
     });
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
 
-    // Retry helper for 503 errors
+    // Retry helper for 503 and 429 errors
     const withRetry = async (fn: () => Promise<any>, maxRetries = 3) => {
       let lastError;
       for (let i = 0; i < maxRetries; i++) {
@@ -45,9 +53,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         } catch (error: any) {
           lastError = error;
           const is503 = error.message?.includes("503") || error.status === 503;
-          if (is503 && i < maxRetries - 1) {
-            const delay = Math.pow(2, i) * 1000;
-            console.warn(`[API] Gemini 503 error. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+          const is429 = error.message?.includes("429") || error.status === 429 || error.message?.includes("quota");
+          
+          if ((is503 || is429) && i < maxRetries - 1) {
+            let delay = Math.pow(2, i) * 2000;
+            const match = error.message?.match(/retry in ([\d.]+)s/i);
+            if (match) {
+              delay = (parseFloat(match[1]) + 1) * 1000;
+            }
+            
+            console.warn(`[API] Gemini ${is429 ? '429' : '503'} error. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }

@@ -20,6 +20,9 @@ export async function generateRobotDesign(prompt: string): Promise<RobotDesign> 
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
         errorMessage = errorData.error || errorMessage;
+        if (errorData.troubleshooting && Array.isArray(errorData.troubleshooting)) {
+          errorMessage += "\n\nTroubleshooting:\n" + errorData.troubleshooting.join("\n");
+        }
       } else {
         const text = await response.text();
         errorMessage = `Server Error (${response.status}): ${text.slice(0, 100)}`;

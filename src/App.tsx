@@ -179,10 +179,10 @@ export default function App() {
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm font-mono flex items-center gap-3"
+                className="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm font-mono flex items-start gap-3"
               >
-                <Shield className="w-4 h-4" />
-                {error}
+                <Shield className="w-4 h-4 mt-0.5 shrink-0" />
+                <div className="whitespace-pre-wrap">{error}</div>
               </motion.div>
             )}
           </div>
